@@ -1,9 +1,10 @@
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
 import { requestError } from "@/errors";
+import { ViaCEPFull } from "@/protocols";
 
 async function get(url: string) {
   try {
-    const result = await axios.get(url);
+    const result: AxiosResponse<ViaCEPFull> = await axios.get(url);
     return result;
   } catch (error) {
     const {
@@ -11,7 +12,7 @@ async function get(url: string) {
       statusText
     } = error.response;
 
-    return requestError(status, statusText);
+    throw requestError(status, statusText);
   }
 }
 

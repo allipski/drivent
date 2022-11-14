@@ -4,11 +4,14 @@ import addressRepository, { CreateAddressParams } from "@/repositories/address-r
 import enrollmentRepository, { CreateEnrollmentParams } from "@/repositories/enrollment-repository";
 import { exclude } from "@/utils/prisma-utils";
 import { Address, Enrollment } from "@prisma/client";
+import { ViaCEPFull } from "@/protocols";
+import { AxiosResponse } from "axios";
 
-async function getAddressFromCEP() {
-  const result = await request.get("https://viacep.com.br/ws/37440000/json/");
-
-  if (!result.data) {
+async function getAddressFromCEP(cep: string) {
+  try {
+    const result: AxiosResponse<ViaCEPFull>  = await request.get(`https://viacep.com.br/ws/${cep}/json/`);
+    return result;
+  } catch(error) {
     throw notFoundError();
   }
 }
@@ -39,6 +42,12 @@ type GetAddressResult = Omit<Address, "createdAt" | "updatedAt" | "enrollmentId"
 
 async function createOrUpdateEnrollmentWithAddress(params: CreateOrUpdateEnrollmentWithAddress) {
   const enrollment = exclude(params, "address");
+  const addressValidation = await request.get(`https://viacep.com.br/ws/${params.address.cep}/json/`);
+
+  if(!addressValidation.data.localidade) {
+    throw requestError(400, "BAD_REQUEST");
+  }
+
   const address = getAddressForUpsert(params.address);
 
   //TODO - Verificar se o CEP é válido

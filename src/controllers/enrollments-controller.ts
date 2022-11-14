@@ -1,4 +1,5 @@
 import { AuthenticatedRequest } from "@/middlewares";
+import { ViaCEPAddress, ViaCEPFull } from "@/protocols";
 import enrollmentsService from "@/services/enrollments-service";
 import { Response } from "express";
 import httpStatus from "http-status";
@@ -33,10 +34,19 @@ export async function getAddressFromCEP(req: AuthenticatedRequest, res: Response
 
   try {
     const address = await enrollmentsService.getAddressFromCEP(cep);
-    res.status(httpStatus.OK).send(address);
+    const newAddress: ViaCEPFull = address.data;
+ 
+    const result: ViaCEPAddress = {
+      logradouro: newAddress.logradouro,
+      complemento: newAddress.complemento,
+      bairro: newAddress.bairro,
+      cidade: newAddress.localidade,
+      uf: newAddress.uf,
+    };
+    res.status(httpStatus.OK).send(result);
   } catch (error) {
     if (error.name === "NotFoundError") {
-      return res.send(httpStatus.NO_CONTENT);
+      return res.sendStatus(httpStatus.NO_CONTENT);
     }
   }
 }
